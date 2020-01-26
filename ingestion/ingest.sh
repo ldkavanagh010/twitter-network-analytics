@@ -1,5 +1,4 @@
-cd verified_september
-unzstd $1.zst
-cd ..
-python ingestion_script.py $1 $2
-rm verified_september/$1
+spark-submit \
+ --master spark://10.0.0.10:7077 \
+twitter-network-analytics/ingestion/ingestion_script.py \
+liam-input-twitter-dataset
