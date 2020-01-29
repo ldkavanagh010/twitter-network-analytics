@@ -1,18 +1,3 @@
-from pyspark.sql import SQLContext, SparkSession
-from pyspark import SparkContext
-from shutil import rmtree
-import sys
-import os
-import boto3
-import wget
-import urllib.request
-from html_parser import *
-import zstandard
-import pathlib
-
-def print_helper(x):
-	print("printing: " + x)
-
 def get_urls():
 	""" fetch urls from the data sources to process
 	"""
@@ -62,14 +47,13 @@ def upload_json_to_s3(path):
 	s3.upload_file(path, 'liam-input-twitter-dataset', ('json/' + path))
 	os.remove(path)
 
-if __name__ == '__main__':
-	
-	# create spark environment
+
+if __name__ == '__main':
 	os.environ['PYSPARK_PYTHON'] = '/usr/bin/python3'
 	spark = SparkSession.builder.appName("DATA INGESTOR").getOrCreate()
 	sc = spark.sparkContext
 	sc.addFile(os.path.abspath('twitter-network-analytics/ingestion/html_parser.py'))
-	
+
 	# find urls from webpage
 	urls = get_urls()
 
@@ -80,17 +64,7 @@ if __name__ == '__main__':
 	for obj in bucket.objects.filter(Prefix='json/'):
 		s3_files.append(obj.key)
 	
-	#sc.parallelize(urls).foreach(lambda url: download_and_write_file(url, s3_files))
-	sql = SQLContext(sc)
-	for file in s3_files:
-		df = sql.read.option('encoding', 'UTF-8').json('s3a://liam-input-twitter-dataset/' + file)
-		slim_rows = df.drop('contributors', 'coordinates', 'created_at', 'delete', 'display_text_range','entities',\
-		 				'extended_entities', 'extended_tweet', 'favorited', 'filter_level', 'geo', 'id_str', \
-		 				'in_reply_to_status_id_str', 'in_reply_to_user_id_str', 'place', 'possibly_sensitive',\
-		 				'quoted_status_id_str', 'source', 'text', 'timestamp_ms', 'truncated')
-		eng = slim_rows.filter(df.lang == 'en')
-		eng.write.mode('ignore').parquet('s3a://liam-input-twitter-dataset/verified/' + file[5:])
-
+	sc.parallelize(urls).foreach(lambda url: download_and_write_file(url, s3_files))
 
 
 
