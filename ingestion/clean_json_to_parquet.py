@@ -26,19 +26,19 @@ if __name__ == '__main__':
 	df.registerTempTable('tweets')
 
 	# extract user data and write parquet to s3
-	#users = sqlctx.sql("""SELECT user.*
-	#					  FROM tweets
-	#					  WHERE in_reply_to_user_id IS NOT NULL""")
-	#users.registerTempTable('users')
-	#clean_users = sqlctx.sql("""SELECT id, name, screen_name, statuses_count, followers_count, friends_count, description
-	#						   FROM users""")
-	#users.write.parquet('s3a://liam-input-twitter-dataset/users')
+	users = sqlctx.sql("""SELECT user.*
+						  FROM tweets
+						  WHERE in_reply_to_user_id IS NOT NULL""")
+	users.registerTempTable('users')
+	clean_users = sqlctx.sql("""SELECT id, name, screen_name, statuses_count, followers_count, friends_count, description
+							   FROM users""").distinct()
+	clean_users.write.mode('overwrite').parquet('s3a://liam-input-twitter-dataset/users')
 
 	# extract replies data and write parquet to s3
-	replies = sqlctx.sql("""SELECT user.id, in_reply_to_user_id, favorite_count, retweet_count
-							FROM tweets
-							WHERE in_reply_to_user_id IS NOT NULL""")
-	replies.write.parquet('s3a://liam-input-twitter-dataset/replies')
+	#replies = sqlctx.sql("""SELECT user.id, in_reply_to_user_id, favorite_count, retweet_count
+	#						FROM tweets
+	#						WHERE in_reply_to_user_id IS NOT NULL""")
+	#replies.write.mode('overwrite').parquet('s3a://liam-input-twitter-dataset/replies')
 
 
 
