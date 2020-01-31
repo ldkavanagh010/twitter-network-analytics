@@ -1,10 +1,6 @@
 import importlib
 import sys
 from pyspark.sql import SQLContext, SparkSession
-from pyspark.sql.types import StructType
-from pyspark.sql.types import StructField
-from pyspark.sql.types import StringType
-from pyspark.sql.types import DataType
 from pyspark import SparkContext
 from neo4j import GraphDatabase
 import boto3

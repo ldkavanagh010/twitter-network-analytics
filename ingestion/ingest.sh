@@ -1,4 +1,4 @@
 spark-submit \
  --master spark://10.0.0.10:7077 \
-ingestion_script.py \
+clean_json_to_parquet.py \
 liam-input-twitter-dataset
