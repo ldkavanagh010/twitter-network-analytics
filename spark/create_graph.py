@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
         replies = sqlctx.read.option('encoding', 'UTF-8').parquet("s3a://" + cfg['s3']['bucket'] + "/" + cfg['s3']['retweets'] + "/*.parquet")
         replies.registerTempTable("replies")
-        edges = sqlctx.sql("""SELECT id, in_reply_to_user_id as reply_id, COUNT(id) as count, SUM(favorite_count) as favorites, SUM(retweet_count) as retweets
+        edges = sqlctx.sql("""SELECT id as src, reply_id as dst, COUNT(id) as weight
                               FROM replies
                               GROUP BY id, reply_id""")
         edges.write.mode('overwrite').parquet("s3a://" + cfg['s3']['bucket']  + "/" + cfg['s3']['edges'])

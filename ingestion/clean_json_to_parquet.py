@@ -39,10 +39,22 @@ if __name__ == '__main__':
 	clean_users.write.mode('overwrite').parquet('s3a://liam-input-twitter-dataset/users')
 
 	# extract replies data and write parquet to s3
-	replies = sqlctx.sql("""SELECT user.id, in_reply_to_user_id, favorite_count, retweet_count
+	replies = sqlctx.sql("""SELECT user.id as id, in_reply_to_user_id as reply_id
 							FROM tweets
 							WHERE in_reply_to_user_id IS NOT NULL and lang = 'en'""")
+
+	retweets = sqlctx.sql("""SELECT user.id as id, retweeted_status.user.id as reply_id
+							 FROM tweets
+							 WHERE retweeted_status IS NOT NULL and lang = 'en' """)
+
+	quotetweets = sqlctx.sql("""SELECT user.id as id, quoted_status.user.id as reply_id
+							    FROM tweets
+							    WHERE quoted_status IS NOT NULL and lang = 'en' """)
+
+
 	replies.write.mode('overwrite').parquet('s3a://' + cfg['s3']['bucket'] + '/' + cfg['s3']['retweets'])
+	retweets.write.mode('append').parquet('s3a://' + cfg['s3']['bucket'] + '/' + cfg['s3']['retweets'])
+	quotetweets.write.mode('append').parquet('s3a://' + cfg['s3']['bucket'] + '/' + cfg['s3']['retweets'])
 
 
 
