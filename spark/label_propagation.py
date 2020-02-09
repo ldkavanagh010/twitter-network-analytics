@@ -1,41 +1,40 @@
 import os
+import operator
+import yaml
 from pyspark.sql import SQLContext, SparkSession
-from pyspark.sql.functions import lit, when
+from pyspark.sql.functions import lit, when, size, desc, udf
 from pyspark import SparkContext
+from pyspark.sql.types import ArrayType
+
 
 def initialize_tables(sc, sqlctx):
-	edges = sqlctx.read.csv('s3a://liam-input-twitter-dataset/tests/edges/*.csv')
+	edges = sqlctx.read.parquet('s3a://liam-input-twitter-dataset/edges/*.parquet')
+	
+	#find all unique vertex ids
+	edges = edges.select('id', 'reply_id', 'count')\
+				 .withColumnRenamed('id', 'src')\
+				 .withColumnRenamed('reply_id', 'dst')\
+				 .withColumnRenamed('count', 'weight')
 
-	# find all unique vertex ids
-	srcs = edges.select(edges._c0).withColumnRenamed('_c0', 'id')
-	dsts = edges.select(edges._c1).withColumnRenamed('_c1', 'id')
-	edges = edges.withColumnRenamed('_c0', 'src')\
-				 .withColumnRenamed('_c1', 'dst')\
-				 .withColumnRenamed('_c2', 'weight')\
-				 .withColumnRenamed('_c3', 'favorites')\
-				 .withColumnRenamed('_c4', 'retweets')
-	srcs.registerTempTable('srcs')
-	srcs.registerTempTable('dsts')
-	verts = sqlctx.sql("""SELECT id FROM srcs
+	srcs = edges.select("src")
+	srcs = srcs.withColumnRenamed('src', 'id')
+	srcs.registerTempTable("srcs")
+
+	dsts = edges.select("dst")
+	dsts = dsts.withColumnRenamed('dst', 'id')
+	dsts.registerTempTable("dsts")
+	verts = sqlctx.sql("""SELECT DISTINCT id FROM srcs
 						 UNION
-						 SELECT id FROM dsts""")
+						 SELECT DISTINCT id FROM dsts""")
+
 
 	# add labelling columns and initialize their value
 	verts = verts.withColumn("label", verts.id).withColumn('prelabelled', lit(False))
-	print(verts)#.show(vertical=True)
 
 	# join the prelabelled vertices and unlabelled vertices tables
-	prelabelled = [('216776631','1',True)]
-	prelabelled_verts = sqlctx.createDataFrame(prelabelled, schema=('id', 'label', 'prelabelled'))
+	prelabelled_verts = sqlctx.read.json("s3a://liam-input-twitter-dataset/prelabelled.json")
 	unlabelled_verts = verts.filter((~verts.id.isin([str(row.id) for row in prelabelled_verts.collect()])))
 	verts = unlabelled_verts.union(prelabelled_verts)
-
-	#add initial label information to edges table
-	#edges.registerTempTable('edges')
-	#erts.registerTempTable('vertices')
-	#edges = sqlctx.sql("""SELECT src, dst, weight, favorites, retweets, label, prelabelled
-	#					  FROM edges
-	#					  JOIN vertices on id=src""")
 
 	return (verts, edges)
 
@@ -57,60 +56,96 @@ def initialize_test_tables(sc, sqlctx):
 	edges = sqlctx.createDataFrame(edges_list, schema=('src', 'dst', 'weight'))
 	return (verts, edges)
 
-def run_algorithm(graph, sc, sqlctx, NumIters):
+
+
+def find_new_label(labels, weights, label, prelabelled):
+	if prelabelled:
+		return label
+	labels = dict(zip(labels, weights))
+	return max(labels.items(), key=operator.itemgetter(1))[0]
+
+def double_edge_weight(weight, prelabelled):
+	if prelabelled:
+		return weight * 2
+	else:
+		return weight
+
+def set_prelabelled(label):
+	communities = ['Bernie', 'Biden', 'Buttigieg', 'Warren', 'Trump',\
+					'Clinton', 'Leftist Media', 'CNN', 'MSNBC', 'FOX',\
+					'Libertarian', 'IDW', 'AltRight']
+	if label in communities:
+		return True
+	else:
+		return False
+
+
+def find_incoming_edges(verts, edges):
+
+	verts.registerTempTable('vertices')
+	edges.registerTempTable('edges')
+	associations = sqlctx.sql("""SELECT edges.src, edges.dst, double_edge_weight(edges.weight, vertices.prelabelled) as weight, vertices.label
+						  		 FROM edges
+						  		 JOIN vertices on edges.dst = vertices.id """)
+	associations.registerTempTable('associations')
+
+	edges = associations.select("src", "dst", "weight")
+
+
+	aggregates = sqlctx.sql("""SELECT src as id, collect_list(dst) as dsts, collect_list(weight) as weights, collect_list(label) as labels 
+							   FROM associations
+							   GROUP BY src""")
+
+	aggregates.registerTempTable('aggs')
+	aggregates = sqlctx.sql("""SELECT aggs.id, vertices.label, aggs.dsts, aggs.weights, aggs.labels, vertices.prelabelled
+							   FROM aggs
+							   JOIN vertices on aggs.id = vertices.id""")
+
+	return aggregates, edges
+
+
+def run_algorithm(graph, sc, sqlctx):
+	verts, edges = graph[0], graph[1]
+	aggregates, edges = find_incoming_edges(verts, edges)
+
+	aggregates.registerTempTable('aggregates')
+
+	relabelled = sqlctx.sql("""SELECT id, findLabel(labels, weights, label, prelabelled) as label, prelabelled
+				 		 			FROM aggregates""")
+
+
+	relabelled.registerTempTable("relabelled")
+
+	relabelled = sqlctx.sql("""SELECT id, label, set_prelabelled(label) as prelabelled
+								 FROM relabelled """)
 	
-	verts = graph[0]
-	edges = graph[1]
-
-	for x in range(NumIters):
-		verts.show()
-		verts.registerTempTable('vertices')
-		edges.registerTempTable('edges')
-
-		# find the aggregates of incoming labels across edges to any given vertex
-		label_aggregates = sqlctx.sql("""SELECT dst, label, sum(weight) as res
-					  				    FROM vertices
-					  					JOIN edges on vertices.id = edges.src
-					  					GROUP BY dst, label""")
-
-		# find the maximum of these aggregates and save that label
-		label_aggregates.registerTempTable('LabelAggregates')
-		new_labels = sqlctx.sql("""SELECT *
-								  FROM LabelAggregates WHERE (dst, res) IN
-								  (SELECT dst, max(res)
-								  FROM LabelAggregates
-								  GROUP BY dst)""")
-
-		# break any ties between the label aggregates
-		new_labels.registerTempTable('tiedlabels')
-		break_ties = sqlctx.sql("""SELECT *
-								   FROM tiedlabels
-								   WHERE (dst, label) IN
-								   (SELECT dst, max(label)
-								   FROM tiedlabels
-								   GROUP BY dst) """)
-
-		# apply the new labels to each vert
-		break_ties.registerTempTable('labels')
-		relabelled_verts = sqlctx.sql("""SELECT id, labels.label, prelabelled
-										 FROM vertices
-										 JOIN labels on vertices.id = labels.dst
-										 WHERE vertices.prelabelled = false """)
-
-		# replace each vertex with its newly labelled version (if it exists)
-		unchanged_verts = verts.filter((~verts.id.isin([str(row.id) for row in relabelled_verts.collect()])))
-		verts = unchanged_verts.union(relabelled_verts)
-		verts.show()
-		
-
-
+	verts = relabelled
+	return (verts, edges)
 
 if __name__ == '__main__':
 	os.environ['PYSPARK_PYTHON'] = '/usr/bin/python3'
-	spark = SparkSession.builder.appName("GRAPH MAKER").getOrCreate()
+	spark = SparkSession.builder.appName("Label Propagation").config('spark.executor.heartbeatInterval', '60')\
+													   		 .config("spark.redis.host", "10.0.0.6")\
+    												         .config("spark.redis.port", "6379")\
+												   	         .config("spark.redis.auth", "hello")\
+												   	         .config('spark.sql.session.timeZone', 'UTC')\
+													   		 .getOrCreate()
 	sqlctx = SQLContext(sparkSession=spark, sparkContext = spark.sparkContext)
-	run_algorithm(initialize_test_tables(spark.sparkContext, sqlctx), spark.sparkContext, sqlctx, 5)
 
+	spark.udf.register("findLabel", find_new_label)
+	spark.udf.register("double_edge_weight", double_edge_weight)
+	spark.udf.register("set_prelabelled", set_prelabelled)
+	graph = initialize_tables(spark.sparkContext, sqlctx)
+	for x in range(5):
+		graph = run_algorithm(graph, spark.sparkContext, sqlctx)
+
+	graph[0].registerTempTable("verts")
+	communities = sqlctx.sql("""SELECT label as community, COUNT(*) as size
+								FROM verts
+								GROUP BY label""")
+
+	graph[0].write.format("org.apache.spark.sql.redis").option("table", "user").option("key.column", "id").save()
+	communities.write.format("org.apache.spark.sql.redis").option("table", "community").option("key.column", "community").save()
 
 
 
