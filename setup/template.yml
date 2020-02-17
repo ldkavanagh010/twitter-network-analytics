@@ -1,0 +1,16 @@
+
+s3:
+  bucket: [BUCKET NAME]
+  input: [FOLDER NAME]
+  retweets: [FOLDER NAME]
+  edges: [FOLDER NAME]
+  users: [FOLDER NAME]
+  vertices: [FOLDER NAME]
+  labelled: [FOLDER NAME]
+  communities: [FOLDER NAME]
+spark:
+  master: [PRIVATE IP OF MASTER]
+redis:
+  host: [PRIVATE IP OF DB]
+  port: [REDIS PORT]
+  pwd: [REDIS PASSWORD]

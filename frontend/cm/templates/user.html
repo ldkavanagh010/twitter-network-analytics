@@ -1,0 +1,128 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="author" content="colorlib.com">
+    <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/user.css')}}" rel="stylesheet" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script type=text/javascript>
+      $(function() {
+         $("ul.tweetscontainer").on("click","li",function(){
+          var tweet_id = $(this).attr("data-tweet-id")
+          $.ajax({
+            url:'/background_process',
+            data: {"tweet_id": tweet_id},
+            success: function(response){
+            $("ul.communities-container").html(response);
+          
+            },
+            error: function(xhr) {
+              console.log("FAILURE")
+              //Do Something to handle error
+              }
+          });
+        });
+      });
+      $(function() {
+         $("ul.communities-container").on("click","li",function(){
+          var name = $(this).attr("data-community-name")
+          $(".selected").removeClass("selected");
+          $(this).children('.community-members').addClass("selected");
+          $.ajax({
+            url:'/background_process_2',
+            data: {"name": name},
+            success: function(response){
+            $(".selected").html(response);
+
+            },
+            error: function(xhr) {
+              console.log("FAILURE")
+              //Do Something to handle error
+              }
+          });
+        });
+      });
+
+    </script>
+  </head>
+  <body>
+    <div class = 'page-box'>
+    <div>
+     <div class="wallcontainer">
+         <div class="profilecard">
+             <div class="profilecardhead"></div>
+             <div class="profilecardimagediv">
+                 <img src={{user.profile_image_url_https}} alt="">
+             </div>
+             <div class="profilecardnameidcont">
+                 <div class="profilecardnamecont">
+                     <span id="profilecardname">{{user.name}}</span>
+                 </div>
+                 <span id="profilecarduid">@{{user.screen_name}}</span>
+             </div>
+
+             <div class="profilecardstatsdiv">
+                 <ul class="profilecardstatslist">
+                     <li class="profilecardstatslistitem">
+                         <span class="dispblk">
+                             <span class="statslistitemhead">Tweets</span>
+                             <span id="statslistitemcount" class="statslistitemcount">{{user.statuses_count}}</span>
+                         </span>
+                     </li>
+
+                     <li class="profilecardstatslistitem">
+                         <span class="dispblk">
+                             <span class="statslistitemhead">Following</span>
+                             <span class="statslistitemcount">{{user.friends_count}}</span>
+                         </span>
+                     </li>
+
+                     <li class="profilecardstatslistitem">
+                         <span class="dispblk">
+                             <span class="statslistitemhead">Followers</span>
+                             <span class="statslistitemcount">{{user.followers_count}}</span>
+                         </span>
+                     </li>
+                 </ul>
+             </div>
+         </div>
+    </div>
+    <div class="bottom-left-container">
+      <div>
+           <ul id="tweetscontainer" class="tweetscontainer">
+            {% for tweet in timeline %}
+            <li class="tweetcontainer" id= "tweetcontainer" data-tweet-id="{{tweet.id}}">
+                 <img class="tweetprofimg" src="{{user.profile_image_url_https}}">
+                 <span class="tweetprofname">{{user.name}}</span>
+                 <span class="tweetprofuid">@{{user.screen_name}}</span>
+                 <div class="ml58px">
+                     <p style="margin: 0px;">{{tweet.text}}</p>
+                     <div class="mt10px">
+                         <span class="retweet tweetstats">
+                             <i class="fa fa-retweet">Retweets</i>
+                             <span class="tweetstatscount">{{tweet.retweet_count}}</span>
+                         </span>
+                         <span class="like tweetstats">
+                             <i class="fa fa-heart-o">Likes</i>
+                             <span class="tweetstatscount">{{tweet.favorite_count}}</span>
+                         </span>
+                     </div>
+                 </div>
+             </li>
+             {% endfor %}
+           </ul>
+       </div>
+      </div>
+    <div class="bottom-right-container">
+      <div>
+        <ul id="communities-container" class="communities-container">
+
+        </ul>
+      </div>
+    </div>
+    </div>
+  </body><!-- This templates was made by Colorlib (https://colorlib.com) -->
+</html>
+

@@ -1,0 +1,163 @@
+
+body {
+ color: #14171a;
+ font-size: 14px;
+ line-height: 20px;
+ background-color: coral;
+}
+ 
+body {
+ font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+
+.wallcontainer{
+ width: 900px; overflow: hidden; margin:auto;
+}
+
+.profilecard{
+ border-bottom-color: rgb(0, 0, 0); border-bottom-width: 1px; border-bottom-style: solid;
+ border-right-color: rgb(0, 0, 0); border-right-width: 1px; border-right-style: solid;
+ border-left-color: rgb(0, 0, 0); border-left-width: 1px; border-left-style: solid;
+ border-top-color: rgb(0, 0, 0); border-top-width: 1px; border-top-style: solid;
+ width: 500px; background: #FFF; margin: 10px; position: center;  background-color: lightblue;
+}
+ 
+.profilecardhead{
+ background-color:#add8ff; height:95px;
+}
+ 
+.profilecardimagediv{
+ margin:-30px 0 0 8px;padding:1px;background:#FFF;display:inline-block;border-radius:50%;
+}
+ 
+.profilecardimagediv img{
+ width:72px;height:72px;border-radius:50%;box-sizing:border-box;border:2px solid #FFF;
+}
+ 
+.profilecardnameidcont{
+ position:relative;width:185px;display:inline-block;
+}
+ 
+.profilecardnamecont{
+ font-size:18px;font-weight:bold;line-height:25px;margin:-1px 0 -2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;word-wrap:normal
+}
+ 
+#profilecardname{
+ color:inherit;text-transform:uppercase;
+}
+ 
+#profilecarduid{
+ color:#667786;font-size:14px;padding-right:5px;text-transform:uppercase;
+}
+ 
+.profilecardstatsdiv{
+ padding:16px; 
+}
+ 
+.profilecardstatslist{
+ table-layout:fixed;box-sizing:border-box;display:inline;margin:0;min-width:100%;padding:0;list-style:outside none;
+}
+ 
+.profilecardstatslistitpx{
+ width:1%;vertical-align:bottom;display:table-cell;padding:0;box-sizing:border-box;line-height:1;overflow:hidden;transition:all 0.15s ease-in-out 0s;text-align:inherit;
+}
+
+.dispblk{
+ display:block;
+}
+.bottom-left-container{
+ width:580px;float:left;margin-top:10px;margin-right:10px;
+}
+ 
+.statslistitpxhead{
+ color:#657786;font-size:12px;font-weight:bold;letter-spacing:0,02px;line-height:16px;overflow:hidden;transition:color 0.15s ease-in-out 0s;display:block;
+}
+ 
+.statslistitpxcount{
+ display:block;font-size:18px;font-weight:bold;padding-top:3px;transition: color .15s ease-in-out 0s;color:#ff0000;
+}
+
+.tweetscontainer{
+list-style: none; margin: 0px; padding: 0px; background-color: lightblue;
+}
+ 
+.tweetcontainer{
+ margin-left: 10px; padding: 10px; overflow: hidden;  
+ border-bottom-color: rgb(0, 0, 0); border-bottom-width: 1px; border-bottom-style: solid;
+ border-right-color: rgb(0, 0, 0); border-right-width: 1px; border-right-style: solid;
+ border-left-color: rgb(0, 0, 0); border-left-width: 1px; border-left-style: solid;
+ border-top-color: rgb(0, 0, 0); border-top-width: 1px; border-top-style: solid;
+ opacity: 0.7
+
+}
+
+.tweetcontainer:hover {
+	 opacity:1; 
+	 background-color: #add8eb;
+}
+
+p {
+	word-wrap: break-word;
+}
+
+
+.tweetprofimg{
+ border-radius: 50%; width: 48px; height: 48px; margin-right: 10px; float: left;
+}
+ 
+.tweetprofname{
+ color:#14171a;font-size:14px;font-weight:bold;
+}
+ 
+.tweetprofuid{
+ color:#657786;font-size:14px;margin-left:5px;
+}
+ 
+.tweetstats{
+ margin-right: 30px; cursor: pointer;
+}
+ 
+.tweetstats i{
+ color: rgb(101, 119, 134); font-size: 16px;
+}
+ 
+.tweetstatscount{
+ color: rgb(101, 119, 134); line-height: 1; font-size: 12px; font-weight: bold; margin-left: 6px;
+}
+
+.bottom-right-container{
+ width:580px;float:right;margin-top:10px;margin-left:5px;
+}
+
+
+.communities-container{
+list-style: none; margin: 0px; padding: 0px;
+}
+ 
+.community-container{
+ margin: 0px; padding: 10px; overflow: hidden; background-color: lightblue;
+ border-bottom-color: rgb(0, 0, 0); border-bottom-width: 1px; border-bottom-style: solid;
+ border-right-color: rgb(0, 0, 0); border-right-width: 1px; border-right-style: solid;
+ border-left-color: rgb(0, 0, 0); border-left-width: 1px; border-left-style: solid;
+ border-top-color: rgb(0, 0, 0); border-top-width: 1px; border-top-style: solid;
+ opacity: 0.7;
+}
+
+.community-container:hover {
+	opacity: 1;
+	background-color: #add8e6;
+}
+
+.community-size-stats{
+ margin-right: 30px; cursor: pointer;
+}
+ 
+.community-size-stats i{
+ color: rgb(101, 119, 134); font-size: 16px;
+}
+ 
+.community-size-count{
+ color: rgb(101, 119, 134); line-height: 1; font-size: 12px; font-weight: bold; margin-left: 6px;
+}
+ 

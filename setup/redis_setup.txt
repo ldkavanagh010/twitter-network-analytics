@@ -1,0 +1,29 @@
+
+1. On your AWS ec2 management tab, click create instance.
+
+2. Choose as your instance m4.2xlarge with ubuntu 16.04. Make sure that it belongs to the same vpc network as your spark-cluster and frontend, and make sure to assign a public ip.
+
+3. Configure your security group inbound traffic rules like this:
+	ssh port 22 open to your ip.
+	redis port 6379 open to spark-cluster
+	redis port 6379 open to your frontend
+
+4. SSH into your database instance that you created.
+
+5. download the latest stable redis implementation onto your instance from https://redis.io/download
+
+6. Follow the instructions on that website to build redis.
+**Common Pitfall: You might need to make the dependencies before making the full product**
+so follow these commands:
+	cd deps
+	make hiredis jemalloc linenoise lua geohash-int
+	cd ..
+	make install
+
+7. install the latest version of tcl, so you can run the redis test suite.
+
+8. verify your redis installation passes all the tests
+
+9. run your new redis cache, by typing:
+
+	redis-server --daemonize yes --protected-mode no --requirepass [password]

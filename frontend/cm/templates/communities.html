@@ -1,0 +1,11 @@
+{% for community in communities %}
+ <li class="community-container" id= "community-container" data-community-name="{{community.name}}">
+  <span class="community-name">{{community.name}}</span>
+  <span class="community-size-stats">
+     <i class="title-size-count">Number of Connections</i>
+     <span class="community-size-count">{{community.size}}</span>
+ </span>
+ <div class="community-members"> </span>
+
+ </li>
+{% endfor %}

@@ -1,0 +1,12 @@
+
+1. On your AWS ec2 management tab, click create instance.
+
+2. Choose as your instance t2.micro with ubuntu 16.04. Make sure that it belongs to the same vpc network as your spark-cluster and frontend, and make sure to assign a public ip.
+
+3. Configure your security group inbound traffic rules like this:
+	ssh port 22 open to your ip.
+	http port 80 open to the world
+
+4. SSH into your frontend instance that you created.
+
+5. copy the frontend files from your repository to instance, along with frontend-run

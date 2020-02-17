@@ -1,0 +1,10 @@
+purchase_type: on_demand
+subnet_id: [put your subnet id here]
+num_instances: 7
+key_name: [put your key name here]
+security_group_ids: [put your sg here]
+instance_type: m4.large
+tag_name:spark-cluster
+vol_size: 100
+role: master
+use_eips: true
