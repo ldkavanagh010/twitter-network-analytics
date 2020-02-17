@@ -8,9 +8,15 @@ s3:
   vertices: [FOLDER NAME]
   labelled: [FOLDER NAME]
   communities: [FOLDER NAME]
+  prelabelled: [file name]
 spark:
   master: [PRIVATE IP OF MASTER]
 redis:
   host: [PRIVATE IP OF DB]
   port: [REDIS PORT]
   pwd: [REDIS PASSWORD]
+twitter:
+  consumer: [twitter api consumer key]
+  consumer_secret: [consumer secret key]
+  api: [twitter api key]
+  api_secret: [twitter api secret key]

@@ -2,4 +2,4 @@ sudo apt-get update
 sudo apt-get install python3-pip
 sudo pip3 install Tweepy
 sudo pip3 install flask-redis
-sudo python3 __init__.py
+sudo python3 frontend/cm/__init__.py
