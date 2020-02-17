@@ -1,4 +1,6 @@
 from pyspark.sql import DataFrame
+from . import cfg
+from . import sqlctx
 
 
 class DataCleaner:
@@ -12,6 +14,7 @@ class DataCleaner:
 		dataframe.write.mode('overwrite').parquet(s3_path)
 		
 	def _write_log(self, entry):
+		pass
 
 
 	def _clean_users(self, dataframe) -> None:
@@ -26,7 +29,7 @@ class DataCleaner:
 									 user.statuses_count, user.followers_count, user.friends_count,
 									 user.description
 							  FROM tweets
-							  WHERE lang = 'en';
+							  WHERE lang = 'en'
 						    """)
 
 
@@ -37,7 +40,7 @@ class DataCleaner:
 								  FROM ( SELECT quoted_status.user
 								  		 FROM tweets
 								  		 WHERE lang = 'en'
-								  		 	   AND quoted_status IS NOT NULL;)
+								  		 	   AND quoted_status IS NOT NULL)
 								""")
 
 		#find the authors of retweeted tweets captured in the dataset
@@ -47,7 +50,7 @@ class DataCleaner:
 							   	   FROM ( SELECT retweeted_status.user
 									  	  FROM tweets
 									  	  WHERE lang = 'en'
-									  		 	AND retweeted_status IS NOT NULL;)
+									  		 	AND retweeted_status IS NOT NULL)
 								""")
 
 
@@ -60,8 +63,7 @@ class DataCleaner:
 						   			 FROM (SELECT *,
 						   		 		   ROW_NUMBER() OVER  (PARTITION BY id ORDER BY screen_name DESC) as rn
 						   				   FROM users) as rows
-						   			WHERE rn = 1 
-						   				  AND lang = 'en';""")
+						   			WHERE rn = 1 """)
 
 		# write all combined user data to s3
 		self._write_data(unique_users, s3_path)
@@ -91,7 +93,7 @@ class DataCleaner:
 		references = retweets.union(quotetweets)
 		self._write_data(references, s3_path)
 
-	def clean():
+	def clean(self):
 		""" This is the public interface for the DataCleaner class. Please call clean in order to clean and perform
 			feature felection on all the raw data for the ConstituentMapper.
 		"""
@@ -100,5 +102,8 @@ class DataCleaner:
 		self._gather_replies(tweets)
 
 
+if __name__ == '__main__':
+	dc = DataCleaner()
+	dc.clean()
 
 

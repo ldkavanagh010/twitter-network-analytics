@@ -1,3 +1,5 @@
 config.yml
 nohup.out
 __pycache__
+*.jar
+*.zip

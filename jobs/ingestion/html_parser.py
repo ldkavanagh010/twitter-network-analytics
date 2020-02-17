@@ -1,5 +1,6 @@
 import urllib3
 from html.parser import HTMLParser
+from typing import List
 
 class MyParser(HTMLParser):
 	hrefs = list()
@@ -43,13 +44,13 @@ class HTMLHandler():
 		return links
 
 	def get_urls(sites: List[str]) -> List[str]:
-	""" This is the public interface for the HTMLHandler class
-		Given a list of pages to scrape links from, return all links of a certain type
-	"""
-	links = []
-	for site in sites:
-		links.append(self._get_links(site))
-	#flatten list structure
-	links = [link for website in links for link in website]
-	# remove duplicates and return
-	return list(set(links))
+		""" This is the public interface for the HTMLHandler class
+			Given a list of pages to scrape links from, return all links of a certain type
+		"""
+		links = []
+		for site in sites:
+			links.append(self._get_links(site))
+		#flatten list structure
+		links = [link for website in links for link in website]
+		# remove duplicates and return
+		return list(set(links))
