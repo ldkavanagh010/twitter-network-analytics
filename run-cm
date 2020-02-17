@@ -1,0 +1,56 @@
+#!/bin/bash
+STAGE=$1
+LIBS_DIR='libs'
+
+# this is a function to parse my yaml file!
+function parse_yaml {
+   local prefix=$2
+   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+   sed -ne "s|^\($s\):|\1|" \
+        -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+        -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+   awk -F$fs '{
+      indent = length($1)/2;
+      vname[indent] = $2;
+      for (i in vname) {if (i > indent) {delete vname[i]}}
+      if (length($3) > 0) {
+         vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+      }
+   }'
+}
+
+#parse config.yml file
+eval $(parse_yaml config.yml)
+#download and zip all dependencies
+if [ "$(ls -A $LIBS_DIR)" ]; then
+     echo "$LIBS_DIR already installed"
+else
+  pip install -r requirements.txt -t ./libs
+fi
+
+
+JAR=spark-redis-2.4.0-jar-with-dependencies.jar
+if test -f "$JAR"; then
+    echo "$FILE aleady downloaded"
+else
+  wget https://repo1.maven.org/maven2/com/redislabs/spark-redis/2.4.0/spark-redis-2.4.0-jar-with-dependencies.jar
+fi
+
+# zip all libraries
+zip -r libs.zip libs
+
+#zip all jobs
+zip -r jobs.zip jobs
+
+#run python starter script with arguments
+spark-submit --master spark://$spark_master:7077 --executor-memory 6G\
+                                                 --driver-memory 4G\
+                                                 --py-files jobs.zip,libs.zip\
+                                                 --jars spark-redis-2.4.0-jar-with-dependencies.jar\
+                                                run.py $STAGE
+
+
+#clean up the directories after running
+rm jobs.zip
+rm libs.zip
