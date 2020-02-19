@@ -3,6 +3,7 @@ import sys
 import operator
 from . import sqlctx, spark, sc
 from pyspark.sql import DataFrame
+from pyspark.sql.typing import Row, StringType, BoolType, 
 from pyspark.sql.functions import lit, when, size, desc, udf
 from typing import List, Tuple
 
@@ -11,7 +12,7 @@ from typing import List, Tuple
 # SPARK UDFS
 # Used in the Algorithm
 #######################################################################
-def find_new_label(labels: List[str], weights: List[int], label: str, prelabelled: bool) -> str:
+def find_new_label(id: str, labels: List[str], weights: List[int], label: str, prelabelled: bool) -> Row:
     """ Aggregate the labels and weights of all the *OUTGOING* edges of each vertex
             Return the label which has the largest aggregated score.
     """
@@ -19,6 +20,14 @@ def find_new_label(labels: List[str], weights: List[int], label: str, prelabelle
         return label
     labels = dict(zip(labels, weights))
     return max(labels.items(), key=operator.itemgetter(1))[0]
+
+
+
+# schema for a new vertice in the graph to be used with the findLabel udf
+schema = StructType([
+        StructField('id', StringType(), False),
+        StructField("label", StringType(), False),
+        StructField("prelabelled", BooleanType(), False)])
 
 
 def double_edge_weight(weight: int, prelabelled: bool) -> int:
@@ -31,7 +40,7 @@ def double_edge_weight(weight: int, prelabelled: bool) -> int:
 
 
 def set_prelabelled(label: str) -> bool:
-    """ Sets the labelled column for each vertex, in order to ensure that 
+    """ Sets the prelabelled column for each vertex, in order to ensure that 
             the chosen communities don't lose members that they have reached.
     """
     communities = ['Bernie', 'Biden', 'Buttigieg', 'Warren', 'Trump',
@@ -59,10 +68,8 @@ class LabelPropagation:
         """ Read the stored Vertex and Edge data from s3
                 Return a tuple of the vertices and edges
         """
-        verts_s3 = 's3a://{}/{}'.format(self.cfg['s3']
-                                        ['bucket'], self.cfg['s3']['vertices'])
-        edges_s3 = 's3a://{}/{}'.format(self.cfg['s3']
-                                        ['bucket'], self.cfg['s3']['edges'])
+        verts_s3 = 's3a://{}/{}'.format(self.cfg['s3']['bucket'], self.cfg['s3']['vertices'])
+        edges_s3 = 's3a://{}/{}'.format(self.cfg['s3']['bucket'], self.cfg['s3']['edges'])
 
         verts = sqlctx.read.parquet(verts_s3)
         edges = sqlctx.read.parquet(edges_s3)
@@ -74,8 +81,7 @@ class LabelPropagation:
                 and write them out to S3
         """
         vertices, edges = graph[0], graph[1]
-        s3_path = 's3a://{}/{}'.format(self.cfg['s3']
-                                       ['bucket'], self.cfg['s3']['labelled'])
+        s3_path = 's3a://{}/{}'.format(self.cfg['s3']['bucket'], self.cfg['s3']['labelled'])
 
         # remove unecessary columns
         vertices = vertices.drop(vertices.prelabelled)
@@ -120,6 +126,12 @@ class LabelPropagation:
         return (aggregates, edges)
 
     def _choose_label(self, graph: Tuple[DataFrame, DataFrame]) -> Tuple[DataFrame, DataFrame]:
+        """ Finds the most prominent label (by aggregated weights) on all the outgoing edges.
+            It applies the given label to each vertex, and then locks in the spread of the predefined
+            label groups.
+            INITIAL SCHEMA: {id: str, label: str, prelabelled: bool, weights: List[int], label: List[str]}
+            FINAL SCHEMA: {id: str, label: str, prelabelled: bool}
+        """
 
         vertices, edges = graph[0], graph[1]
         vertices.registerTempTable('vertices')

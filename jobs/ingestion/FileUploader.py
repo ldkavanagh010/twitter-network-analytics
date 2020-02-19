@@ -35,9 +35,10 @@ class FileUploader:
         return files
 
     def _delete_file(path: str) -> None:
-        """ Tries to delete the file at given path, writes to logs on success or failure
+        """ deletes the file at given path.
         """
-        os.remove(input_file_str)
+
+        os.remove(os.abspath(path))
 
     def _uncompress_zst(self, file: str) -> str:
         """ Takes an string path to a file compressed in zst format, decompresses it and
@@ -54,16 +55,9 @@ class FileUploader:
                 with open(output_path, 'wb') as destination:
                     decomp.copy_stream(compressed, destination)
         # delete the zipped file
+        self._delete_file(file)
 
         return output_path
-
-    def _uncompress_tar(file: str) -> str:
-        """ Takes an string path to a file compressed in tar format, decompresses it and
-                returns a string path to the uncompressed file(s). Will delete the compressed file
-        """
-        tf = tarfile.open(file)
-        tf.extractall()
-        return ""
 
     def _download_file(self, url: str, s3_files: List[str]) -> str:
         """ Fetches files from the source websites, to be fed to the uncompressor.
@@ -72,8 +66,6 @@ class FileUploader:
         file_name = os.path.basename(urllib.parse.urlparse(url).path)
         file_path = pathlib.Path(file_name)
 
-        if '{}/{}'.format(cfg['s3']['input'], str(pathlib.Path(file_name).stem)) in s3_files:
-            return
         # Check if the file has already been downloaded.
         if not os.path.exists(str(file_path)):
             # Download and write to file.
@@ -86,20 +78,33 @@ class FileUploader:
         """
         pass
 
-    def upload_file(self, path: str) -> None:
+    def _upload_file(self, path: str) -> None:
         """ Uploads unzipped files to s3
         """
         s3_path = '{}/{}'.format(cfg['s3']['input'], path)
         s3 = boto3.client('s3')
         s3.upload_file(path, cfg['s3']['bucket'], s3_path)
-
         # deletes file from local host.
-        os.remove(path)
+        self.delete_file(path)
+
+
+        def ingest():
+        """This is the public interface for the file uploader. Call ingest(), to begin downloading the historical tweets
+           and uploading them to your s3 bucket.
+        """
 
         # find urls from webpage
         urls = get_urls()
 
+                
+
+        # download the file from the url, uncompress it and upload it to s3.
         for url in urls:
+            # do not download if file is already accounted for
+            url_file_name = url.split('/')[-1][:-4]
+            if '{}/{}'.format(cfg['s3']['input'], url_file_name) in s3_files:
+                continue
+
             compressed_path = download_file(url, s3_files)
-            uncompressed_paths = uncompress_zst(compressed_path)
-            upload_json_to_s3(uncompressed_paths)
+            uncompressed_path = uncompress_zst(compressed_path)
+            upload_file(uncompressed_path)

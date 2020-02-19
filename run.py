@@ -21,12 +21,12 @@ def ingest_data(substage):
 	from jobs.ingestion.FileUploader import FileUploader
 	if substage == 'all' or substage == 'ingestion':
 		file_uploader = FileUploader(cfg)
-		#file_uploader.upload()
+		file_uploader.upload()
 		cleaner = DataCleaner(cfg)
 		cleaner.clean()
 	elif substage == 'download':
 		file_uploader = FileUploader(cfg)
-		#file_uploader.upload()
+		file_uploader.upload()
 	elif substage == 'clean':
 		cleaner = DataCleaner(cfg)
 		cleaner.clean()

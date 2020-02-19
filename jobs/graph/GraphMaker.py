@@ -13,8 +13,7 @@ class GraphMaker:
 
     def _read_data(self) -> DataFrame:
         """Read the edge data table from s3 and return them to a spark dataframe. """
-        s3_path = 's3a://{}/{}/*.parquet'.format(
-            self.cfg['s3']['bucket'], self.cfg['s3']['retweets'])
+        s3_path = 's3a://{}/{}/*.parquet'.format(self.cfg['s3']['bucket'], self.cfg['s3']['retweets'])
         return sqlctx.read.parquet(s3_path)
 
     def _write_data(self, dataframe: DataFrame, s3_path: str) -> None:
@@ -45,8 +44,7 @@ class GraphMaker:
             (~verts.id.isin([str(row.id) for row in prelabelled_verts.collect()])))
         verts = unlabelled_verts.union(prelabelled_verts)
 
-        s3_path = 's3a://{}/{}'.format(cfg['s3']
-                                       ['bucket'], self.cfg['s3']['vertices'])
+        s3_path = 's3a://{}/{}'.format(cfg['s3']['bucket'], self.cfg['s3']['vertices'])
         self._write_data(verts, s3_path)
 
     def _find_edges(self, dataframe: DataFrame) -> None:
@@ -64,8 +62,7 @@ class GraphMaker:
                       FROM replies
                       GROUP BY src, dst""")
         # write out to s3
-        s3_path = 's3a://{}/{}'.format(self.cfg['s3']
-                                       ['bucket'], self.cfg['s3']['edges'])
+        s3_path = 's3a://{}/{}'.format(self.cfg['s3']['bucket'], self.cfg['s3']['edges'])
         self._write_data(edges, s3_path)
 
     def make_graph(self):

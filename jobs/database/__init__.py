@@ -4,5 +4,5 @@ import os
 
 # set up spark environment
 os.environ['PYSPARK_PYTHON'] = '/usr/bin/python3'
-spark = SparkSession.builder.appName("Label Propagation").config(
+spark = SparkSession.builder.appName("DatabaseWriter").config(
     'spark.sql.session.timeZone', 'UTC').getOrCreate()
